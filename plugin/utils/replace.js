@@ -5,12 +5,13 @@ const { dedupeClassNames } = require('./dedupe');
 // import icons from '../../icons';
 // TODO: This is just a hack for getting the icons JSON file from the output directory.
 const jsonFile = path.resolve(__dirname, config.output.dir, config.output.jsonFile);
-const icons = Object.keys(jsonFile)
-    .map((name) => new Icon(name, icons[name], config.attrs))
-    .reduce((icons, icon) => {
-        icons[icon.name] = icon;
-        return icons;
-    }, {});
+const iconsData = JSON.parse(fs.readFileSync(jsonFile));
+const icons = Object.fromEntries(
+    Object.entries(iconsData).map(([key, value]) => [
+        key,
+        new Icon(key, value, context.options.attrs),
+    ])
+);
 
 /**
  * Replace all HTML elements that have a `data-icon` attribute with SVG markup

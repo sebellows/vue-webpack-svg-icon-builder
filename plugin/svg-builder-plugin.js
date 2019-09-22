@@ -26,7 +26,7 @@ class SVGIconBuilderPlugin {
      * @return {Promise}
      */
     async processSvgs() {
-        console.log(`Processing SVG files from ${this.input.dir}/${this.input.iconDir}...`);
+        console.log(`Processing SVG files from '${this.inputIconDir}'...`);
 
         return new Promise((resolve, reject) => {
             fs.readdirSync(this.inputIconDir)
@@ -36,7 +36,10 @@ class SVGIconBuilderPlugin {
                     const svg = fs.readFileSync(filePath);
 
                     optimize(svg, this.options.plugins).then((svg) =>
-                        fs.writeFileSync(filePath, svg)
+                        fs.writeFileSync(filePath, svg, 'utf8', (err) => {
+                            if (err) console.error(err);
+                            console.log(`SVG icons JSON file saved to '${jsonFilePath}'`);
+                        })
                     );
                 });
             resolve(this);
@@ -50,13 +53,18 @@ class SVGIconBuilderPlugin {
      * @return {Promise}
      */
     generateIconsJSON(context) {
-        const { dir, jsonFile } = context.options.output;
-        const outputDir = path.resolve(__dirname, dir, jsonFile);
+        console.log(`Building SVG icons JSON file in '${this.outputIconDir}'...`);
+
+        const { jsonFile } = context.options.output;
 
         return new Promise((resolve, reject) => {
             const iconsMap = toDataObject(this.inputIconDir);
+            const jsonFilePath = `${this.outputPath}/${jsonFile}`;
 
-            fs.writeFileSync(outputDir, JSON.stringify(iconsMap, null, 2));
+            fs.writeFileSync(jsonFilePath, JSON.stringify(iconsMap, null, 2), 'utf8', (err) => {
+                if (err) console.error(err);
+                console.log(`SVG icons JSON file saved to '${jsonFilePath}'`);
+            });
 
             resolve(context);
         });
@@ -80,7 +88,6 @@ class SVGIconBuilderPlugin {
                 .map((attr) => `${attr}="${attrs[attr]}"`)
                 .join(' ');
             const wrapperAttrs = `xmlns="${xmlns}" style="display:none;"`;
-            const spriteFile = `${this.outputPath}/${spriteSheet}`;
 
             if (useSprite) {
                 const symbols = Object.keys(icons)
@@ -89,12 +96,15 @@ class SVGIconBuilderPlugin {
 
                 const spriteWrapper = `<svg ${wrapperAttrs}><defs>${symbols}</defs></svg>`;
 
-                fs.writeFileSync(spriteFile, spriteWrapper, 'utf8', (err) => {
-                    if (err) {
-                        console.error(err);
+                fs.writeFileSync(
+                    `${this.outputPath}/${spriteSheet}`,
+                    spriteWrapper,
+                    'utf8',
+                    (err) => {
+                        if (err) console.error(err);
+                        console.log(`SVG Sprite saved to `);
                     }
-                    console.log(`SVG Sprite saved to `);
-                });
+                );
             }
             resolve(context);
         });
@@ -107,6 +117,8 @@ class SVGIconBuilderPlugin {
      * @return {Promise}
      */
     generateSvgs(context) {
+        console.log(`Building SVGs in '${this.outputIconDir}'...`);
+
         return new Promise((resolve, reject) => {
             const icons = this._getIconsFromJSON(context);
 
@@ -123,9 +135,10 @@ class SVGIconBuilderPlugin {
         const iconsData = JSON.parse(fs.readFileSync(jsonFile));
 
         return Object.fromEntries(
-            Object.entries(iconsData).map(([key, value]) => {
-                return [key, new Icon(key, value, context.options.attrs)];
-            })
+            Object.entries(iconsData).map(([key, value]) => [
+                key,
+                new Icon(key, value, context.options.attrs),
+            ])
         );
     }
 
@@ -135,11 +148,11 @@ class SVGIconBuilderPlugin {
      * @return {*}
      */
     async make() {
-        console.log('make?');
         const context = await this.processSvgs();
         const icons = await this.generateIconsJSON(context);
         const sprite = await this.generateSprite(icons);
         const svgs = await this.generateSvgs(sprite);
+
         return svgs;
     }
 
@@ -152,17 +165,13 @@ class SVGIconBuilderPlugin {
         // Access the assets once they have been assembled
         const onEmit = async (compilation, callback) => {
             try {
-                const { output } = this.options;
-
-                // this.inputIconDir = path.resolve(__dirname, input.dir, input.iconDir);
-                // this.outputIconDir = path.resolve(__dirname, output.dir, output.iconDir);
-                this.jsonFile = path.resolve(__dirname, output.dir, output.jsonFile);
-                this.spriteSheet = path.resolve(__dirname, output.dir, output.spriteSheet);
-                console.log('options', output, this.jsonFile);
+                const { dir, jsonFile, spriteSheet } = this.options.output;
+                const jsonFilePath = path.resolve(__dirname, dir, jsonFile);
+                const spriteSheetPath = path.resolve(__dirname, dir, spriteSheet);
 
                 await mkdirpAsync(this.outputIconDir);
-                await mkdirpAsync(this.jsonFile);
-                await mkdirpAsync(this.spriteSheet);
+                await mkdirpAsync(jsonFilePath);
+                await mkdirpAsync(spriteSheetPath);
                 await this.make();
 
                 // Now everything is done, so call the callback without anything in it

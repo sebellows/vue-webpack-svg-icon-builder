@@ -19,7 +19,7 @@ function _parseArray(resultSet, array) {
     }
 }
 
-const hasOwn = {}.hasOwnProperty;
+const hasOwn = Object.hasOwnProperty;
 
 function _parseNumber(resultSet, num) {
     resultSet[num] = true;

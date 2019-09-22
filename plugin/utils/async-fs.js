@@ -26,7 +26,6 @@ const asyncFS = {
     },
 
     mkdirpAsync: async function(filepath) {
-        console.log(filepath);
         const directory = path.dirname(filepath);
 
         // if the directory doesn't exist, create it
