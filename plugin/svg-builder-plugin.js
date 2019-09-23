@@ -13,11 +13,13 @@ class SVGIconBuilderPlugin {
     constructor(options = {}) {
         // Merge custom options with defaults.
         this.options = mergeDeep(config, options);
-        this.input = this.options.input;
-        this.output = this.options.output;
-        this.outputPath = path.resolve(__dirname, this.output.dir);
-        this.inputIconDir = path.resolve(__dirname, this.input.dir, this.input.iconDir);
-        this.outputIconDir = path.resolve(__dirname, this.output.dir, this.output.iconDir);
+
+        const { dir: inputDir, iconDir: inputIconDir } = this.options.input;
+        const { dir: outputDir, iconDir: outputIconDir } = this.options.output;
+
+        this.outputPath = path.resolve(__dirname, outputDir);
+        this.inputIconDir = path.resolve(__dirname, inputDir, inputIconDir);
+        this.outputIconDir = path.resolve(__dirname, outputDir, outputIconDir);
     }
 
     /**
@@ -31,11 +33,11 @@ class SVGIconBuilderPlugin {
         return new Promise((resolve, reject) => {
             fs.readdirSync(this.inputIconDir)
                 .filter((icon) => path.extname(icon) === '.svg')
-                .forEach((svgFile) => {
+                .forEach(async (svgFile) => {
                     const filePath = path.join(this.inputIconDir, svgFile);
                     const svg = fs.readFileSync(filePath);
 
-                    optimize(svg, this.options.plugins).then((svg) =>
+                    await optimize(svg, this.options.plugins).then((svg) =>
                         fs.writeFileSync(filePath, svg, 'utf8', (err) => {
                             if (err) console.error(err);
                             console.log(`SVG icons JSON file saved to '${jsonFilePath}'`);
@@ -117,10 +119,9 @@ class SVGIconBuilderPlugin {
      * @return {Promise}
      */
     generateSvgs(context) {
-        console.log(`Building SVGs in '${this.outputIconDir}'...`);
-
         return new Promise((resolve, reject) => {
             const icons = this._getIconsFromJSON(context);
+            console.log(`Building SVGs in '${this.outputIconDir}'...`);
 
             Object.keys(icons).forEach((name) => {
                 const svg = icons[name].toSvg();
@@ -148,12 +149,14 @@ class SVGIconBuilderPlugin {
      * @return {*}
      */
     async make() {
-        const context = await this.processSvgs();
-        const icons = await this.generateIconsJSON(context);
-        const sprite = await this.generateSprite(icons);
-        const svgs = await this.generateSvgs(sprite);
-
-        return svgs;
+        try {
+            await this.processSvgs();
+            await this.generateIconsJSON(this);
+            await this.generateSprite(this);
+            return await this.generateSvgs(this);
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     /**
@@ -163,7 +166,7 @@ class SVGIconBuilderPlugin {
      */
     apply(compiler) {
         // Access the assets once they have been assembled
-        const onEmit = async (compilation, callback) => {
+        compiler.hooks.emit.tapPromise('SVGIconBuilderPlugin', async (compilation, callback) => {
             try {
                 const { dir, jsonFile, spriteSheet } = this.options.output;
                 const jsonFilePath = path.resolve(__dirname, dir, jsonFile);
@@ -180,16 +183,7 @@ class SVGIconBuilderPlugin {
                 // if at any point we hit a snag, pass the error on to webpack
                 callback(err);
             }
-        };
-
-        // Check if the webpack 4 plugin API is available
-        if (compiler.hooks) {
-            // Register emit event listener for webpack 4
-            compiler.hooks.emit.tapAsync('SVGIconBuilderPlugin', onEmit);
-        } else {
-            // Register emit event listener for older webpack versions
-            compiler.plugin('emit', onEmit);
-        }
+        });
     }
 }
 
