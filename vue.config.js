@@ -8,4 +8,10 @@ module.exports = {
             config.plugins.push(new SVGIconBuilderPlugin());
         }
     },
+    // chainWebpack: (config) => {
+    //     config.module
+    //         .rule('svg')
+    //         .use('file-loader')
+    //         .loader('vue-svg-loader');
+    // },
 };

@@ -3,6 +3,7 @@ const path = require('path');
 
 const Icon = require('./icon');
 const config = require('./config');
+const tmpl = require('./template');
 
 const mergeDeep = require('./utils/mergeDeep');
 const { mkdirpAsync } = require('./utils/async-fs');
@@ -91,6 +92,8 @@ class SVGIconBuilderPlugin {
                 .join(' ');
             const wrapperAttrs = `xmlns="${xmlns}" style="display:none;"`;
 
+            // if (!fs.existsSync(this.options.output.components)) {}
+
             if (useSprite) {
                 const symbols = Object.keys(icons)
                     .map((icon) => `<symbol id="${icon}" ${attrStr}>${icons[icon]}</symbol>`)
@@ -98,9 +101,13 @@ class SVGIconBuilderPlugin {
 
                 const spriteWrapper = `<svg ${wrapperAttrs}><defs>${symbols}</defs></svg>`;
 
+                const vueComponent = tmpl(spriteWrapper);
+                const spritePath = path.join(__dirname, output.componentsPath, 'SvgSprite.vue');
+
                 fs.writeFileSync(
-                    `${this.outputPath}/${spriteSheet}`,
-                    spriteWrapper,
+                    // `${this.outputPath}/${spriteSheet}`,
+                    spritePath,
+                    vueComponent,
                     'utf8',
                     (err) => {
                         if (err) console.error(err);
@@ -166,7 +173,7 @@ class SVGIconBuilderPlugin {
      */
     apply(compiler) {
         // Access the assets once they have been assembled
-        compiler.hooks.emit.tapPromise('SVGIconBuilderPlugin', async (compilation, callback) => {
+        compiler.hooks.emit.tapAsync('SVGIconBuilderPlugin', async (compilation, callback) => {
             try {
                 const { dir, jsonFile, spriteSheet } = this.options.output;
                 const jsonFilePath = path.resolve(__dirname, dir, jsonFile);
@@ -180,8 +187,10 @@ class SVGIconBuilderPlugin {
                 // Now everything is done, so call the callback without anything in it
                 callback();
             } catch (err) {
+                console.log('apply', callback);
+                console.error(err);
                 // if at any point we hit a snag, pass the error on to webpack
-                callback(err);
+                // callback(err);
             }
         });
     }

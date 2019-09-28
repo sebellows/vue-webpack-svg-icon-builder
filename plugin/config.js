@@ -9,6 +9,7 @@ module.exports = {
         iconDir: 'img',
         jsonFile: 'svg-icons.json',
         spriteSheet: 'svg-icons-sprite.svg',
+        componentsPath: '../src/components',
     },
     plugins: [
         { cleanupIDs: false },

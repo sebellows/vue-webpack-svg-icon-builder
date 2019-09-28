@@ -2,13 +2,11 @@
     <div class="home">
         <svg-sprite />
         <h1>Why Icons?</h1>
-        <div class="row">
-            <div class="col" v-for="icon in icons" :key="icon">
-                <div class="icon-box">
-                    <svg class="icon">
-                        <use :xlink:href="`#${icon}`" />
-                    </svg>
-                </div>
+        <div class="icon-row">
+            <div class="icon-box" v-for="icon in icons" :key="icon">
+                <svg class="icon" width="32" height="32">
+                    <use :xlink:href="`#${icon}`" />
+                </svg>
             </div>
         </div>
     </div>
@@ -16,12 +14,12 @@
 
 <script>
 // @ is an alias to /src
-// import SvgSprite from '@/assets/svg-icons-sprite.svg';
+import SvgSprite from '@/components/SvgSprite.vue';
 
 export default {
     name: 'Home',
     components: {
-        // SvgSprite,
+        SvgSprite,
     },
 
     data() {
@@ -35,28 +33,28 @@ export default {
 <style>
 .container {
     margin: auto;
-    padding: 0 -0.5rem;
+    padding: 1rem;
     max-width: 960px;
 }
-.row {
+.icon-row {
     display: flex;
     flex-flow: row wrap;
-    margin-left: -0.5rem;
-    margin-right: -0.5rem;
-}
-.col {
-    display: block;
-    flex: 1 0 auto;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+    align-items: center;
+    justify-content: center;
 }
 .icon-box {
+    background-color: #eee;
     border: 1px solid #ddd;
     border-radius: 0.25rem;
     display: inline-flex;
+    /* flex: 1 1 auto; */
     align-items: center;
     justify-content: center;
+    margin: 0.25rem;
     padding: 0.25rem;
-    width: 100%;
+    width: min-content;
+}
+.icon {
+    flex: none;
 }
 </style>
