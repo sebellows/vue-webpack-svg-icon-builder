@@ -6,6 +6,7 @@ node_modules
 /src/assets/*.svg
 /src/assets/svg-icons.json
 /src/assets/img/*.svg
+collection.html
 
 # local env files
 .env.local

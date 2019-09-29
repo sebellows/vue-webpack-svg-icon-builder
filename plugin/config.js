@@ -10,6 +10,7 @@ module.exports = {
         jsonFile: 'svg-icons.json',
         spriteSheet: 'svg-icons-sprite.svg',
         componentsPath: '../src/components',
+        componentFile: 'SvgSprite.vue',
     },
     plugins: [
         { cleanupIDs: false },
@@ -19,10 +20,11 @@ module.exports = {
         { convertStyleToAttrs: true },
         { convertTransform: true },
         { mergePaths: false },
-        { removeAttrs: { attrs: '(fill|stroke.*)' } },
+        { removeAttrs: { attrs: '(fill|stroke.*|height|width|id)' } },
         { removeDesc: true },
         { removeDimensions: true },
         { removeTitle: true },
+        { sortAttrs: true },
     ],
     attrs: {
         xmlns: 'http://www.w3.org/2000/svg',
@@ -36,5 +38,7 @@ module.exports = {
         'stroke-linejoin': 'round',
     },
     // maxConcurrency: CPUS().length,
-    useSprite: true,
+    sprite: true,
+    component: true,
+    demo: true,
 };
